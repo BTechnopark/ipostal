@@ -1,0 +1,31 @@
+package api_test
+
+import (
+	"testing"
+
+	"github.com/BTechnopark/ipostal/src/api"
+	"github.com/BTechnopark/ipostal/src/session"
+	"github.com/stretchr/testify/assert"
+)
+
+type configMock struct{}
+
+// GetBaseUrl implements api.PostalConfig.
+func (c *configMock) GetBaseUrl() string {
+	return "https://kodepos.posindonesia.co.id"
+}
+
+func TestFindPostalCode(t *testing.T) {
+	sess := session.NewSession("test_session")
+	api := api.NewIPostalApi(&configMock{}, sess)
+
+	resp, err := api.FindPostalCode("0")
+	assert.Nil(t, err)
+	assert.NotNil(t, resp)
+
+	data, err := resp.Html()
+	assert.Nil(t, err)
+	assert.NotNil(t, data)
+
+	// t.Log(data, "asd")
+}
