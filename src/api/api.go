@@ -82,6 +82,8 @@ func (a *iPostalApiImpl) Request(method string, uri string, query any, payload i
 		req.Header.Set(key, value)
 	}
 
+	a.session.AddCookiesToRequest(req)
+
 	return req, err
 }
 
