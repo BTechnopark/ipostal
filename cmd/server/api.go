@@ -1,7 +1,10 @@
 package main
 
 import (
+	"time"
+
 	"github.com/BTechnopark/ipostal/config"
+	"github.com/BTechnopark/ipostal/pkg/cache"
 	"github.com/BTechnopark/ipostal/src/api"
 	"github.com/BTechnopark/ipostal/src/ipostal_api"
 	"github.com/BTechnopark/ipostal/src/session"
@@ -16,11 +19,18 @@ func SetUpSdk() gin_api.ApiSdk {
 	return sdk
 }
 
-func CreateApi(sdk gin_api.ApiSdk) {
+func CreateApi(sdk gin_api.ApiSdk) error {
 	DevMode := config.GetEnv("DEV_MODE", "") != ""
 	if DevMode {
 		RegisterDoc(sdk)
 	}
+
+	cacheDuration := config.GetEnv("CACHE_DURATION", "10m")
+	d, err := time.ParseDuration(cacheDuration)
+	if err != nil {
+		return err
+	}
+	cache := cache.NewCache(d)
 
 	v1 := sdk.Group("v1")
 
@@ -30,6 +40,8 @@ func CreateApi(sdk gin_api.ApiSdk) {
 	}
 	indonesianPostalCodeApi := api.NewIPostalApi(config, session)
 
-	api := ipostal_api.NewApi(indonesianPostalCodeApi)
+	api := ipostal_api.NewApi(indonesianPostalCodeApi, cache)
 	ipostal_api.RegisterIPostalApi(v1, api)
+
+	return nil
 }

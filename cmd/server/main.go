@@ -21,7 +21,10 @@ func main() {
 			var err error
 
 			sdk := SetUpSdk()
-			CreateApi(sdk)
+			err = CreateApi(sdk)
+			if err != nil {
+				return err
+			}
 
 			port := config.GetEnv("PORT", "3000")
 			sdk.GetGinEngine().Run(fmt.Sprintf(":%s", port))

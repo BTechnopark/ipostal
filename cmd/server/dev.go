@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log/slog"
 	"os"
 
 	"github.com/BTechnopark/ipostal/config"
@@ -15,20 +16,26 @@ func DevServer() *cli.Command {
 		Aliases:     []string{"dev"},
 		Before: func(ctx *cli.Context) error {
 			envs := map[string]string{
-				"DEV_MODE": "1",
+				"DEV_MODE":       "1",
+				"CACHE_DURATION": "5m",
 			}
 			for key, value := range envs {
+				slog.Info("Set Environment", slog.String(key, value))
 				os.Setenv(key, value)
 			}
+
 			return nil
 		},
 		Action: func(ctx *cli.Context) error {
 			var err error
 
 			sdk := SetUpSdk()
-			CreateApi(sdk)
+			err = CreateApi(sdk)
+			if err != nil {
+				return err
+			}
 
-			port := config.GetEnv("PORT", "3000")
+			port := config.GetEnv("PORT", "8000")
 			sdk.GetGinEngine().Run(fmt.Sprintf("localhost:%s", port))
 
 			return err

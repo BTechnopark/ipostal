@@ -1,8 +1,11 @@
 package ipostal_api
 
 import (
+	"context"
+	"errors"
 	"net/http"
 
+	"github.com/BTechnopark/ipostal/pkg/cache"
 	"github.com/BTechnopark/ipostal/src/api"
 	"github.com/BTechnopark/ipostal/src/api_context"
 	"github.com/BTechnopark/ipostal/src/model"
@@ -11,14 +14,16 @@ import (
 	"github.com/muchrief/gin_api"
 )
 
-func NewFindPostalCode(api api.IPostalApi) ApiMeta {
+func NewFindPostalCode(api api.IPostalApi, cache cache.Cache) ApiMeta {
 	return &findPostalCodeImpl{
-		api: api,
+		api:   api,
+		cache: cache,
 	}
 }
 
 type findPostalCodeImpl struct {
-	api api.IPostalApi
+	api   api.IPostalApi
+	cache cache.Cache
 }
 
 type FindPostalCodeQuery struct {
@@ -40,11 +45,12 @@ func (f *findPostalCodeImpl) Handler() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 
 		query := FindPostalCodeQuery{}
-		result := &ResponseData[[]*model.PostalCode]{}
+		result := &ResponseData[model.ListPostalCode]{}
 
 		apiCtx := api_context.NewApiContext(ctx)
 		apiCtx.
 			BindQuery(&query).
+			Cache(f.cache, "postal_code", result).
 			Exec(func(seterr func(err error)) {
 				var err error
 
@@ -54,6 +60,9 @@ func (f *findPostalCodeImpl) Handler() gin.HandlerFunc {
 
 				doc, err := f.api.FindPostalCode(query.Q)
 				if err != nil {
+					if errors.Is(err, context.DeadlineExceeded) {
+						err = errors.New("third party api timeout")
+					}
 					seterr(err)
 					return
 				}

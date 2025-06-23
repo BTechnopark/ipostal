@@ -25,7 +25,7 @@ type iPostalParserImpl struct {
 // PostalCode implements IPostalParser.
 func (p *iPostalParserImpl) PostalCode() ([]*model.PostalCode, error) {
 	var err error
-	results := []*model.PostalCode{}
+	results := model.ListPostalCode{}
 
 	rows := p.GetBodyRows()
 	rows.Each(func(i int, s *goquery.Selection) {
@@ -36,6 +36,7 @@ func (p *iPostalParserImpl) PostalCode() ([]*model.PostalCode, error) {
 		postalCode := model.PostalCode{}
 		s.Find("td").Each(func(i int, s *goquery.Selection) {
 			content := s.Text()
+
 			switch i {
 			case 0:
 				num, err := strconv.Atoi(content)

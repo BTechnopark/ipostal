@@ -1,14 +1,16 @@
 package ipostal_api
 
 import (
+	"github.com/BTechnopark/ipostal/pkg/cache"
 	"github.com/BTechnopark/ipostal/src/api"
 	"github.com/gin-gonic/gin"
 	"github.com/muchrief/gin_api"
 )
 
-func NewApi(api api.IPostalApi) Api {
+func NewApi(api api.IPostalApi, cache cache.Cache) Api {
 	return &apiImpl{
-		api: api,
+		api:   api,
+		cache: cache,
 	}
 }
 
@@ -22,10 +24,11 @@ type ApiMeta interface {
 }
 
 type apiImpl struct {
-	api api.IPostalApi
+	api   api.IPostalApi
+	cache cache.Cache
 }
 
 // FindPostalCode implements Api.
 func (a *apiImpl) FindPostalCode() ApiMeta {
-	return NewFindPostalCode(a.api)
+	return NewFindPostalCode(a.api, a.cache)
 }
