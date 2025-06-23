@@ -9,14 +9,18 @@ import (
 )
 
 func NewCache(d time.Duration) *cacheImpl {
-	return &cacheImpl{
+	cache := cacheImpl{
 		items:    make(map[string]*CacheItem),
 		duration: d,
 	}
+
+	go cache.cleanUp()
+
+	return &cache
 }
 
 type Cache interface {
-	Set(key string, value any) error
+	Set(key string, value any, exp time.Duration) error
 	Get(key string, resp any) error
 	Delete(key string)
 }
@@ -35,7 +39,7 @@ type cacheImpl struct {
 	duration time.Duration
 }
 
-func (c *cacheImpl) Set(key string, value any) error {
+func (c *cacheImpl) Set(key string, value any, exp time.Duration) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -54,7 +58,7 @@ func (c *cacheImpl) Set(key string, value any) error {
 	cacheItem := CacheItem{
 		Key:        key,
 		Value:      raw,
-		Expiration: now.Add(c.duration).Unix(),
+		Expiration: now.Add(exp).Unix(),
 	}
 
 	c.items[key] = &cacheItem
@@ -86,4 +90,19 @@ func (c *cacheImpl) Delete(key string) {
 	defer c.mu.Unlock()
 
 	delete(c.items, key)
+}
+
+func (c *cacheImpl) cleanUp() {
+	t := time.NewTicker(time.Minute)
+
+	for range t.C {
+		slog.Info("Clean Up Cache", slog.Int("count", len(c.items)))
+
+		for key, item := range c.items {
+			if time.Now().Unix() > item.Expiration {
+				slog.Info("Delete Cache", slog.String("key", key))
+				c.Delete(key)
+			}
+		}
+	}
 }

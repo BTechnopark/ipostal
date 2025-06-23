@@ -2,7 +2,9 @@ package api_test
 
 import (
 	"testing"
+	"time"
 
+	"github.com/BTechnopark/ipostal/pkg/cache"
 	"github.com/BTechnopark/ipostal/src/api"
 	"github.com/BTechnopark/ipostal/src/session"
 	"github.com/stretchr/testify/assert"
@@ -17,15 +19,12 @@ func (c *configMock) GetBaseUrl() string {
 
 func TestFindPostalCode(t *testing.T) {
 	sess := session.NewSession("test_session")
-	api := api.NewIPostalApi(&configMock{}, sess)
+	c := cache.NewCache(time.Minute)
+	api := api.NewIPostalApi(&configMock{}, sess, c)
 
 	resp, err := api.FindPostalCode("0")
 	assert.Nil(t, err)
-	assert.NotNil(t, resp)
-
-	data, err := resp.Html()
-	assert.Nil(t, err)
-	assert.NotNil(t, data)
+	assert.NotEmpty(t, resp)
 
 	// t.Log(data, "asd")
 }

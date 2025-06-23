@@ -17,11 +17,11 @@ func DevServer() *cli.Command {
 		Before: func(ctx *cli.Context) error {
 			envs := map[string]string{
 				"DEV_MODE":       "1",
-				"CACHE_DURATION": "5m",
+				"CACHE_DURATION": "1m",
 			}
 			for key, value := range envs {
-				slog.Info("Set Environment", slog.String(key, value))
 				os.Setenv(key, value)
+				slog.Info("Set Environment", slog.String(key, value))
 			}
 
 			return nil

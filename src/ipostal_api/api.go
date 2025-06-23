@@ -19,8 +19,8 @@ type Api interface {
 }
 
 type ApiMeta interface {
-	Handler() gin.HandlerFunc
 	Meta(uri string) *gin_api.ApiData
+	Handler() gin.HandlerFunc
 }
 
 type apiImpl struct {

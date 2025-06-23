@@ -5,23 +5,25 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/BTechnopark/ipostal/pkg/cache"
+	"github.com/BTechnopark/ipostal/src/model"
 	"github.com/BTechnopark/ipostal/src/session"
-	"github.com/PuerkitoBio/goquery"
 	"github.com/gorilla/schema"
 )
 
-func NewIPostalApi(config PostalConfig, session session.Session) IPostalApi {
+func NewIPostalApi(config PostalConfig, session session.Session, cache cache.Cache) IPostalApi {
 	encoder := schema.NewEncoder()
 
 	return &iPostalApiImpl{
 		config:  config,
 		encoder: encoder,
 		session: session,
+		cache:   cache,
 	}
 }
 
 type IPostalApi interface {
-	FindPostalCode(kodepos string) (*goquery.Document, error)
+	FindPostalCode(kodepos string) (model.ListPostalCode, error)
 }
 
 type PostalConfig interface {
@@ -39,6 +41,7 @@ type iPostalApiImpl struct {
 	config  PostalConfig
 	encoder *schema.Encoder
 	session session.Session
+	cache   cache.Cache
 }
 
 var defaultHeader = map[string]string{

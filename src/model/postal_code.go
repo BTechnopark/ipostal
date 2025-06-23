@@ -1,5 +1,7 @@
 package model
 
+import "strings"
+
 type PostalCode struct {
 	ID         int    `json:"id"`
 	PostalCode string `json:"postal_code"`
@@ -11,39 +13,47 @@ type PostalCode struct {
 
 type ListPostalCode []*PostalCode
 
-func (l ListPostalCode) Provinces() []string {
-	result := []string{}
+func (l ListPostalCode) Provinces(p string) []*Province {
+	result := []*Province{}
 
 	mapProvince := map[string]struct{}{}
 	for _, v := range l {
+		if !strings.Contains(strings.ToLower(v.Province), strings.ToLower(p)) {
+			continue
+		}
+
 		mapProvince[v.Province] = struct{}{}
 	}
 
 	for k := range mapProvince {
-		result = append(result, k)
+		result = append(result, &Province{
+			Province: k,
+		})
 	}
 
 	return result
 }
 
-func (l ListPostalCode) Regencies(province string) []*Regency {
+func (l ListPostalCode) Regencies(p, r string) []*Regency {
 	result := []*Regency{}
 	mapProvinceRegency := map[string]map[string]struct{}{}
 
-	setRegency := func(province, regency string) {
-		if mapProvinceRegency[province] == nil {
-			mapProvinceRegency[province] = map[string]struct{}{}
+	setRegency := func(p, regency string) {
+		if mapProvinceRegency[p] == nil {
+			mapProvinceRegency[p] = map[string]struct{}{}
 		}
-		mapProvinceRegency[province][regency] = struct{}{}
+		mapProvinceRegency[p][regency] = struct{}{}
 	}
 
 	for _, data := range l {
-		if province == "" {
-			setRegency(data.Province, data.Regency)
+		if !strings.Contains(strings.ToLower(data.Province), strings.ToLower(p)) {
+			continue
 		}
-		if data.Province == province {
-			setRegency(data.Province, data.Regency)
+		if !strings.Contains(strings.ToLower(data.Regency), strings.ToLower(r)) {
+			continue
 		}
+
+		setRegency(data.Province, data.Regency)
 	}
 
 	for key, value := range mapProvinceRegency {
@@ -60,7 +70,7 @@ func (l ListPostalCode) Regencies(province string) []*Regency {
 	return result
 }
 
-func (l ListPostalCode) District(province, regency string) []*District {
+func (l ListPostalCode) District(p, r, d string) []*District {
 	result := []*District{}
 	provinceRegencyDistrict := map[string]map[string]map[string]struct{}{}
 
@@ -75,12 +85,16 @@ func (l ListPostalCode) District(province, regency string) []*District {
 	}
 
 	for _, data := range l {
-		if province == "" {
-			setDistrict(data.Province, data.Regency, data.District)
+		if !strings.Contains(strings.ToLower(data.Province), strings.ToLower(p)) {
+			continue
 		}
-		if data.Province == province {
-			setDistrict(data.Province, data.Regency, data.District)
+		if !strings.Contains(strings.ToLower(data.Regency), strings.ToLower(r)) {
+			continue
 		}
+		if !strings.Contains(strings.ToLower(data.District), strings.ToLower(d)) {
+			continue
+		}
+		setDistrict(data.Province, data.Regency, data.District)
 	}
 
 	for province, regencies := range provinceRegencyDistrict {

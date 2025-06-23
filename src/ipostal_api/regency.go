@@ -15,38 +15,39 @@ import (
 	"github.com/muchrief/gin_api"
 )
 
-func NewFindPostalCode(api api.IPostalApi, cache cache.Cache) ApiMeta {
-	return &findPostalCodeImpl{
+func NewRegencies(api api.IPostalApi, cache cache.Cache) ApiMeta {
+	return &regencyImpl{
 		api:   api,
 		cache: cache,
 	}
 }
 
-type findPostalCodeImpl struct {
+type regencyImpl struct {
 	api   api.IPostalApi
 	cache cache.Cache
 }
 
-type FindPostalCodeQuery struct {
-	Q string `json:"q" form:"q" schema:"q"`
+type RegencyQuery struct {
+	Province string `json:"province" form:"province" schema:"province"`
+	Q        string `json:"q" form:"q" schema:"q"`
 }
 
 // Meta implements ApiMeta.
-func (f *findPostalCodeImpl) Meta(uri string) *gin_api.ApiData {
+func (r *regencyImpl) Meta(uri string) *gin_api.ApiData {
 	return &gin_api.ApiData{
 		Method:       http.MethodGet,
 		RelativePath: uri,
-		Query:        &FindPostalCodeQuery{},
-		Response:     &ResponseData[[]*model.PostalCode]{},
+		Query:        &RegencyQuery{},
+		Response:     &ResponseData[[]*model.Regency]{},
 	}
 }
 
 // Handler implements ApiMeta.
-func (f *findPostalCodeImpl) Handler() gin.HandlerFunc {
+func (r *regencyImpl) Handler() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 
-		query := FindPostalCodeQuery{}
-		result := &ResponseData[model.ListPostalCode]{}
+		query := RegencyQuery{}
+		result := &ResponseData[[]*model.Regency]{}
 
 		fullpath := ctx.Request.URL.String()
 		hash := md5.Sum([]byte(fullpath))
@@ -55,15 +56,11 @@ func (f *findPostalCodeImpl) Handler() gin.HandlerFunc {
 		apiCtx := api_context.NewApiContext(ctx)
 		apiCtx.
 			BindQuery(&query).
-			Cache(f.cache, cacheKey, result).
+			Cache(r.cache, cacheKey, result).
 			Exec(func(seterr func(err error)) {
 				var err error
 
-				if query.Q == "" {
-					query.Q = "0"
-				}
-
-				data, err := f.api.FindPostalCode(query.Q)
+				data, err := r.api.FindPostalCode("0")
 				if err != nil {
 					if errors.Is(err, context.DeadlineExceeded) {
 						err = errors.New("third party api timeout")
@@ -72,7 +69,7 @@ func (f *findPostalCodeImpl) Handler() gin.HandlerFunc {
 					return
 				}
 
-				result.Data = data
+				result.Data = data.Regencies(query.Province, query.Q)
 			}).
 			Finish(result)
 	}

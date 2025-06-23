@@ -3,6 +3,7 @@ package api_context
 import (
 	"errors"
 	"net/http"
+	"time"
 
 	"github.com/BTechnopark/ipostal/pkg/cache"
 	"github.com/gin-gonic/gin"
@@ -41,7 +42,7 @@ func (a *apiContext) Finish(data Response) ApiContext {
 	return a.
 		Exec(func(seterr func(err error)) {
 			if a.cache != nil {
-				err := a.cache.Set(a.cacheKey, data)
+				err := a.cache.Set(a.cacheKey, data, time.Minute*5)
 				if err != nil {
 					seterr(err)
 					return

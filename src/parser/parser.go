@@ -15,7 +15,7 @@ func NewIPostalParser(doc *goquery.Document) IPostalParser {
 
 type IPostalParser interface {
 	Headers() ([]string, error)
-	PostalCode() ([]*model.PostalCode, error)
+	PostalCode() (model.ListPostalCode, error)
 }
 
 type iPostalParserImpl struct {
@@ -23,7 +23,7 @@ type iPostalParserImpl struct {
 }
 
 // PostalCode implements IPostalParser.
-func (p *iPostalParserImpl) PostalCode() ([]*model.PostalCode, error) {
+func (p *iPostalParserImpl) PostalCode() (model.ListPostalCode, error) {
 	var err error
 	results := model.ListPostalCode{}
 

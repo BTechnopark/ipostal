@@ -15,38 +15,38 @@ import (
 	"github.com/muchrief/gin_api"
 )
 
-func NewFindPostalCode(api api.IPostalApi, cache cache.Cache) ApiMeta {
-	return &findPostalCodeImpl{
+func NewProvinces(api api.IPostalApi, cache cache.Cache) ApiMeta {
+	return &provinceImpl{
 		api:   api,
 		cache: cache,
 	}
 }
 
-type findPostalCodeImpl struct {
+type provinceImpl struct {
 	api   api.IPostalApi
 	cache cache.Cache
 }
 
-type FindPostalCodeQuery struct {
+type ProvinceQuery struct {
 	Q string `json:"q" form:"q" schema:"q"`
 }
 
 // Meta implements ApiMeta.
-func (f *findPostalCodeImpl) Meta(uri string) *gin_api.ApiData {
+func (p *provinceImpl) Meta(uri string) *gin_api.ApiData {
 	return &gin_api.ApiData{
 		Method:       http.MethodGet,
 		RelativePath: uri,
-		Query:        &FindPostalCodeQuery{},
-		Response:     &ResponseData[[]*model.PostalCode]{},
+		Query:        &ProvinceQuery{},
+		Response:     &ResponseData[[]*model.Province]{},
 	}
 }
 
 // Handler implements ApiMeta.
-func (f *findPostalCodeImpl) Handler() gin.HandlerFunc {
+func (p *provinceImpl) Handler() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 
-		query := FindPostalCodeQuery{}
-		result := &ResponseData[model.ListPostalCode]{}
+		query := ProvinceQuery{}
+		result := &ResponseData[[]*model.Province]{}
 
 		fullpath := ctx.Request.URL.String()
 		hash := md5.Sum([]byte(fullpath))
@@ -55,15 +55,11 @@ func (f *findPostalCodeImpl) Handler() gin.HandlerFunc {
 		apiCtx := api_context.NewApiContext(ctx)
 		apiCtx.
 			BindQuery(&query).
-			Cache(f.cache, cacheKey, result).
+			Cache(p.cache, cacheKey, result).
 			Exec(func(seterr func(err error)) {
 				var err error
 
-				if query.Q == "" {
-					query.Q = "0"
-				}
-
-				data, err := f.api.FindPostalCode(query.Q)
+				data, err := p.api.FindPostalCode("0")
 				if err != nil {
 					if errors.Is(err, context.DeadlineExceeded) {
 						err = errors.New("third party api timeout")
@@ -72,7 +68,7 @@ func (f *findPostalCodeImpl) Handler() gin.HandlerFunc {
 					return
 				}
 
-				result.Data = data
+				result.Data = data.Provinces(query.Q)
 			}).
 			Finish(result)
 	}

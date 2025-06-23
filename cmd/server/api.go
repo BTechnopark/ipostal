@@ -38,7 +38,7 @@ func CreateApi(sdk gin_api.ApiSdk) error {
 	config := &Config{
 		BaseUrl: config.GetEnv("POSTAL_URI", "https://kodepos.posindonesia.co.id"),
 	}
-	indonesianPostalCodeApi := api.NewIPostalApi(config, session)
+	indonesianPostalCodeApi := api.NewIPostalApi(config, session, cache)
 
 	api := ipostal_api.NewApi(indonesianPostalCodeApi, cache)
 	ipostal_api.RegisterIPostalApi(v1, api)
