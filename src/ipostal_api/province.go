@@ -3,6 +3,7 @@ package ipostal_api
 import (
 	"math"
 	"net/http"
+	"strings"
 
 	"github.com/BTechnopark/ipostal/pkg/cache"
 	"github.com/BTechnopark/ipostal/src/api_context"
@@ -24,9 +25,9 @@ type provinceImpl struct {
 }
 
 type ProvinceQuery struct {
-	Q     string `json:"q" form:"q"`
-	Page  int    `json:"page" form:"page"`
-	Limit int    `json:"limit" form:"limit"`
+	Q     string `json:"q" form:"q" schema:"q"`
+	Page  int    `json:"page" form:"page" schema:"page"`
+	Limit int    `json:"limit" form:"limit" schema:"limit"`
 }
 
 // Meta implements ApiMeta.
@@ -63,18 +64,34 @@ func (p *provinceImpl) Handler() gin.HandlerFunc {
 					return
 				}
 
+				if query.Q != "" {
+					newData := []*kodepos.Province{}
+
+					key := strings.ToLower(query.Q)
+					for _, item := range data {
+						provinceName := strings.ToLower(item.Name)
+						if strings.Contains(provinceName, key) {
+							newData = append(newData, item)
+						}
+					}
+
+					data = newData
+				}
+
 				result.PageInfo.TotalItems = len(data)
 				result.PageInfo.CurrentPage = query.Page
 				result.PageInfo.TotalPages = int(math.Ceil(float64(len(data)) / float64(query.Limit)))
 
-				start := query.Page*query.Limit - query.Limit
+				start := (query.Page - 1) * query.Limit
 				end := query.Page * query.Limit
 				if end > len(data) {
 					end = len(data)
 				}
-				data = data[start:end]
+				if start > end {
+					return
+				}
 
-				result.Data = data
+				result.Data = data[start:end]
 			}).
 			Finish(result)
 	}

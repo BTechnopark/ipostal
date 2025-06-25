@@ -41,8 +41,6 @@ func (a *kodePosImpl) Region(provinceKey string) ([]*Region, error) {
 			return err
 		}
 
-		// log.Println(doc.Html())
-
 		doc.Find("div.col-12.col-md-4 a").Each(func(i int, s *goquery.Selection) {
 			content := s.Text()
 
