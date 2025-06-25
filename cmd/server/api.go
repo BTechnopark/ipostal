@@ -1,6 +1,7 @@
 package main
 
 import (
+	"net/http"
 	"time"
 
 	"github.com/BTechnopark/ipostal/config"
@@ -25,8 +26,9 @@ func CreateApi(sdk gin_api.ApiSdk) error {
 	if DevMode {
 		RegisterDoc(sdk)
 	}
+	CheckHealth(sdk)
 
-	cacheDuration := config.GetEnv("CACHE_DURATION", "10m")
+	cacheDuration := config.GetEnv("CACHE_DURATION", "5m")
 	d, err := time.ParseDuration(cacheDuration)
 	if err != nil {
 		return err
@@ -53,4 +55,17 @@ func CreateApi(sdk gin_api.ApiSdk) error {
 	ipostal_api.RegisterIPostalApi(v1, api)
 
 	return nil
+}
+
+func CheckHealth(sdk gin_api.ApiSdk) {
+	sdk.Register(&gin_api.ApiData{
+		Method:       http.MethodGet,
+		RelativePath: "/health",
+		Response:     &ipostal_api.ResponseData[any]{},
+	}, func(ctx *gin.Context) {
+		response := &ipostal_api.ResponseData[any]{
+			Message: "OK",
+		}
+		ctx.JSON(http.StatusOK, &response)
+	})
 }

@@ -45,13 +45,19 @@ func (p *regionImpl) Meta(uri string) *gin_api.ApiData {
 func (p *regionImpl) Handler() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 
-		query := RegionQuery{}
-		result := &ResponseData[[]*kodepos.Region]{}
+		query := RegionQuery{
+			Page:  1,
+			Limit: 20,
+		}
+		result := &ResponseData[[]*kodepos.Region]{
+			Data:     []*kodepos.Region{},
+			PageInfo: &PageInfo{},
+		}
 
 		apiCtx := api_context.NewApiContext(ctx)
 		apiCtx.
 			BindQuery(&query).
-			Cache(p.cache, query.ProvinceKey, result).
+			Cache(p.cache, "", result).
 			Exec(func(seterr func(err error)) {
 				data, err := p.api.Region(query.ProvinceKey)
 				if err != nil {
@@ -65,6 +71,7 @@ func (p *regionImpl) Handler() gin.HandlerFunc {
 					key := strings.ToLower(query.Q)
 					for _, item := range data {
 						regionName := strings.ToLower(item.Name)
+
 						if strings.Contains(regionName, key) {
 							newData = append(newData, item)
 						}

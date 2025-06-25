@@ -70,6 +70,7 @@ func (p *provinceImpl) Handler() gin.HandlerFunc {
 					key := strings.ToLower(query.Q)
 					for _, item := range data {
 						provinceName := strings.ToLower(item.Name)
+
 						if strings.Contains(provinceName, key) {
 							newData = append(newData, item)
 						}
