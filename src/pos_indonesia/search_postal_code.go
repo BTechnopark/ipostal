@@ -1,4 +1,4 @@
-package api
+package pos_indonesia
 
 import (
 	"net/http"
@@ -7,11 +7,10 @@ import (
 	"time"
 
 	"github.com/BTechnopark/ipostal/src/model"
-	"github.com/BTechnopark/ipostal/src/parser"
 	"github.com/PuerkitoBio/goquery"
 )
 
-func (a *iPostalApiImpl) FindPostalCode(kodepos string) (model.ListPostalCode, error) {
+func (a *iPostalApiImpl) SearchPostalCode(kodepos string) (model.ListPostalCode, error) {
 	var err error
 	result := model.ListPostalCode{}
 
@@ -41,23 +40,42 @@ func (a *iPostalApiImpl) FindPostalCode(kodepos string) (model.ListPostalCode, e
 		"Referer": uri,
 	}
 
-	req, err := a.Request(http.MethodPost, uri, nil, strings.NewReader(rawPayload), headers)
+	req, err := a.api.NewRequest(http.MethodPost, uri, nil, strings.NewReader(rawPayload), headers)
 	if err != nil {
 		return result, err
 	}
 
-	err = a.SendRequest(req, func(resp *http.Response) error {
+	err = a.api.SendRequest(req, func(resp *http.Response) error {
 		doc, err := goquery.NewDocumentFromReader(resp.Body)
 		if err != nil {
 			return err
 		}
-		p := parser.NewIPostalParser(doc)
-		data, err := p.PostalCode()
-		if err != nil {
-			return err
-		}
 
-		result = data
+		doc.Find("table tbody tr").Each(func(i int, s *goquery.Selection) {
+			if err != nil {
+				return
+			}
+
+			postalCode := model.PostalCode{}
+			s.Find("td").Each(func(i int, s *goquery.Selection) {
+				content := s.Text()
+
+				switch i {
+				case 1:
+					postalCode.PostalCode = content
+				case 2:
+					postalCode.Village = content
+				case 3:
+					postalCode.District = content
+				case 4:
+					postalCode.Region = content
+				case 5:
+					postalCode.Province = content
+				}
+			})
+
+			result = append(result, &postalCode)
+		})
 
 		return nil
 	})

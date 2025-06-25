@@ -1,47 +1,30 @@
-package api
+package client
 
 import (
 	"io"
 	"net/http"
-	"time"
 
-	"github.com/BTechnopark/ipostal/pkg/cache"
-	"github.com/BTechnopark/ipostal/src/model"
 	"github.com/BTechnopark/ipostal/src/session"
 	"github.com/gorilla/schema"
 )
 
-func NewIPostalApi(config PostalConfig, session session.Session, cache cache.Cache) IPostalApi {
+func NewApi(session session.Session) Api {
 	encoder := schema.NewEncoder()
 
-	return &iPostalApiImpl{
-		config:  config,
+	return &apiImpl{
 		encoder: encoder,
 		session: session,
-		cache:   cache,
 	}
 }
 
-type IPostalApi interface {
-	FindPostalCode(kodepos string) (model.ListPostalCode, error)
+type Api interface {
+	NewRequest(method string, uri string, query any, payload io.Reader, headers map[string]string) (*http.Request, error)
+	SendRequest(req *http.Request, handler func(resp *http.Response) error) error
 }
 
-type PostalConfig interface {
-	GetBaseUrl() string
-}
-
-var clientApi *http.Client = &http.Client{
-	Transport: &http.Transport{
-		MaxIdleConnsPerHost: 5,
-	},
-	Timeout: 30 * time.Second,
-}
-
-type iPostalApiImpl struct {
-	config  PostalConfig
+type apiImpl struct {
 	encoder *schema.Encoder
 	session session.Session
-	cache   cache.Cache
 }
 
 var defaultHeader = map[string]string{
@@ -65,7 +48,7 @@ var defaultHeader = map[string]string{
 	"User-Agent":                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36",
 }
 
-func (a *iPostalApiImpl) Request(method string, uri string, query any, payload io.Reader, headers map[string]string) (*http.Request, error) {
+func (a *apiImpl) NewRequest(method string, uri string, query any, payload io.Reader, headers map[string]string) (*http.Request, error) {
 	req, err := http.NewRequest(method, uri, payload)
 	if err != nil {
 		return nil, err
@@ -90,8 +73,8 @@ func (a *iPostalApiImpl) Request(method string, uri string, query any, payload i
 	return req, err
 }
 
-func (a *iPostalApiImpl) SendRequest(req *http.Request, handler func(resp *http.Response) error) error {
-	resp, err := clientApi.Do(req)
+func (a *apiImpl) SendRequest(req *http.Request, handler func(resp *http.Response) error) error {
+	resp, err := ClientApi.Do(req)
 	if err != nil {
 		return err
 	}

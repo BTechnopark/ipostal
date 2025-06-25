@@ -2,20 +2,30 @@ package ipostal_api
 
 import (
 	"github.com/BTechnopark/ipostal/pkg/cache"
-	"github.com/BTechnopark/ipostal/src/api"
+	"github.com/BTechnopark/ipostal/src/kodepos"
+	"github.com/BTechnopark/ipostal/src/model"
 	"github.com/gin-gonic/gin"
 	"github.com/muchrief/gin_api"
 )
 
-func NewApi(api api.IPostalApi, cache cache.Cache) Api {
+func NewApi(api PostalCodeApi, cache cache.Cache) IPostalApi {
 	return &apiImpl{
 		api:   api,
 		cache: cache,
 	}
 }
 
-type Api interface {
-	FindPostalCode() ApiMeta
+type IPostalApi interface {
+	SearchPostalCode() ApiMeta
+	Province() ApiMeta
+	Region() ApiMeta
+}
+
+type PostalCodeApi interface {
+	Province() ([]*kodepos.Province, error)
+	Region(provinceKey string) ([]*kodepos.Region, error)
+	PostalCode(provinceKey, regionKey string) ([]*kodepos.KodePosData, error)
+	SearchPostalCode(q string) (model.ListPostalCode, error)
 }
 
 type ApiMeta interface {
@@ -24,11 +34,21 @@ type ApiMeta interface {
 }
 
 type apiImpl struct {
-	api   api.IPostalApi
+	api   PostalCodeApi
 	cache cache.Cache
 }
 
+// Province implements IPostalApi.
+func (a *apiImpl) Province() ApiMeta {
+	return NewProvinceApi(a.api, a.cache)
+}
+
+// Region implements IPostalApi.
+func (a *apiImpl) Region() ApiMeta {
+	return NewRegionApi(a.api, a.cache)
+}
+
 // FindPostalCode implements Api.
-func (a *apiImpl) FindPostalCode() ApiMeta {
-	return NewFindPostalCode(a.api, a.cache)
+func (a *apiImpl) SearchPostalCode() ApiMeta {
+	return NewSearchPostalCode(a.api, a.cache)
 }

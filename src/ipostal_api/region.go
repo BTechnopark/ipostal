@@ -10,38 +10,45 @@ import (
 	"github.com/muchrief/gin_api"
 )
 
-func NewProvinceApi(api PostalCodeApi, cache cache.Cache) ApiMeta {
-	return &provinceImpl{
+func NewRegionApi(api PostalCodeApi, cache cache.Cache) ApiMeta {
+	return &regionImpl{
 		api:   api,
 		cache: cache,
 	}
 }
 
-type provinceImpl struct {
+type regionImpl struct {
 	api   PostalCodeApi
 	cache cache.Cache
 }
 
+type RegionQuery struct {
+	ProvinceKey string `json:"province_key" form:"province_key" schema:"province_key" binding:"required"`
+}
+
 // Meta implements ApiMeta.
-func (p *provinceImpl) Meta(uri string) *gin_api.ApiData {
+func (p *regionImpl) Meta(uri string) *gin_api.ApiData {
 	return &gin_api.ApiData{
 		Method:       http.MethodGet,
 		RelativePath: uri,
-		Response:     &ResponseData[[]*kodepos.Province]{},
+		Query:        &RegionQuery{},
+		Response:     &ResponseData[[]*kodepos.Region]{},
 	}
 }
 
 // Handler implements ApiMeta.
-func (p *provinceImpl) Handler() gin.HandlerFunc {
+func (p *regionImpl) Handler() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 
-		result := &ResponseData[[]*kodepos.Province]{}
+		query := RegionQuery{}
+		result := &ResponseData[[]*kodepos.Region]{}
 
 		apiCtx := api_context.NewApiContext(ctx)
 		apiCtx.
-			Cache(p.cache, "province", result).
+			BindQuery(&query).
+			Cache(p.cache, query.ProvinceKey, result).
 			Exec(func(seterr func(err error)) {
-				data, err := p.api.Province()
+				data, err := p.api.Region(query.ProvinceKey)
 				if err != nil {
 					seterr(err)
 					return

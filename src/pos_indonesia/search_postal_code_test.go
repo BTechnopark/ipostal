@@ -1,11 +1,12 @@
-package api_test
+package pos_indonesia_test
 
 import (
 	"testing"
 	"time"
 
 	"github.com/BTechnopark/ipostal/pkg/cache"
-	"github.com/BTechnopark/ipostal/src/api"
+	"github.com/BTechnopark/ipostal/src/client"
+	"github.com/BTechnopark/ipostal/src/pos_indonesia"
 	"github.com/BTechnopark/ipostal/src/session"
 	"github.com/stretchr/testify/assert"
 )
@@ -20,9 +21,10 @@ func (c *configMock) GetBaseUrl() string {
 func TestFindPostalCode(t *testing.T) {
 	sess := session.NewSession("test_session")
 	c := cache.NewCache(time.Minute)
-	api := api.NewIPostalApi(&configMock{}, sess, c)
+	a := client.NewApi(sess)
+	api := pos_indonesia.NewPosIndonesiaApi(&configMock{}, a, c)
 
-	resp, err := api.FindPostalCode("0")
+	resp, err := api.SearchPostalCode("0")
 	assert.Nil(t, err)
 	assert.NotEmpty(t, resp)
 

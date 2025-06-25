@@ -8,22 +8,21 @@ import (
 	"net/http"
 
 	"github.com/BTechnopark/ipostal/pkg/cache"
-	"github.com/BTechnopark/ipostal/src/api"
 	"github.com/BTechnopark/ipostal/src/api_context"
 	"github.com/BTechnopark/ipostal/src/model"
 	"github.com/gin-gonic/gin"
 	"github.com/muchrief/gin_api"
 )
 
-func NewFindPostalCode(api api.IPostalApi, cache cache.Cache) ApiMeta {
-	return &findPostalCodeImpl{
+func NewSearchPostalCode(api PostalCodeApi, cache cache.Cache) ApiMeta {
+	return &searchPostalCodeImpl{
 		api:   api,
 		cache: cache,
 	}
 }
 
-type findPostalCodeImpl struct {
-	api   api.IPostalApi
+type searchPostalCodeImpl struct {
+	api   PostalCodeApi
 	cache cache.Cache
 }
 
@@ -32,7 +31,7 @@ type FindPostalCodeQuery struct {
 }
 
 // Meta implements ApiMeta.
-func (f *findPostalCodeImpl) Meta(uri string) *gin_api.ApiData {
+func (f *searchPostalCodeImpl) Meta(uri string) *gin_api.ApiData {
 	return &gin_api.ApiData{
 		Method:       http.MethodGet,
 		RelativePath: uri,
@@ -42,7 +41,7 @@ func (f *findPostalCodeImpl) Meta(uri string) *gin_api.ApiData {
 }
 
 // Handler implements ApiMeta.
-func (f *findPostalCodeImpl) Handler() gin.HandlerFunc {
+func (f *searchPostalCodeImpl) Handler() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 
 		query := FindPostalCodeQuery{}
@@ -63,7 +62,7 @@ func (f *findPostalCodeImpl) Handler() gin.HandlerFunc {
 					query.Q = "0"
 				}
 
-				data, err := f.api.FindPostalCode(query.Q)
+				data, err := f.api.SearchPostalCode(query.Q)
 				if err != nil {
 					if errors.Is(err, context.DeadlineExceeded) {
 						err = errors.New("third party api timeout")
