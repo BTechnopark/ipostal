@@ -1,6 +1,8 @@
 package api_context
 
 import (
+	"crypto/md5"
+	"encoding/hex"
 	"errors"
 	"net/http"
 	"time"
@@ -8,6 +10,8 @@ import (
 	"github.com/BTechnopark/ipostal/pkg/cache"
 	"github.com/gin-gonic/gin"
 )
+
+var CacheApiDuration = time.Minute * 10
 
 func NewApiContext(ctx *gin.Context) ApiContext {
 	return &apiContext{
@@ -42,7 +46,7 @@ func (a *apiContext) Finish(data Response) ApiContext {
 	return a.
 		Exec(func(seterr func(err error)) {
 			if a.cache != nil {
-				err := a.cache.Set(a.cacheKey, data, time.Minute*5)
+				err := a.cache.Set(a.cacheKey, data, CacheApiDuration)
 				if err != nil {
 					seterr(err)
 					return
@@ -84,6 +88,12 @@ func (a *apiContext) Cache(c cache.Cache, key string, resp any) ApiContext {
 	return a.Exec(func(seterr func(err error)) {
 		a.cache = c
 		a.cacheKey = key
+
+		if key == "" {
+			fullpath := a.ctx.Request.URL.String()
+			hash := md5.Sum([]byte(fullpath))
+			a.cacheKey = hex.EncodeToString(hash[:])
+		}
 
 		err := a.cache.Get(key, resp)
 		if err != nil {

@@ -9,9 +9,10 @@ import (
 )
 
 type Province struct {
-	Name string `json:"name"`
-	Key  string `json:"key"`
-	Url  string `json:"url"`
+	Name  string `json:"name"`
+	Key   string `json:"key"`
+	Image string `json:"image"`
+	Url   string `json:"url"`
 }
 
 func (a *kodePosImpl) Province() ([]*Province, error) {
@@ -37,6 +38,8 @@ func (a *kodePosImpl) Province() ([]*Province, error) {
 		}
 
 		doc.Find(".row a").Each(func(i int, s *goquery.Selection) {
+			img := s.Find("img").AttrOr("src", "")
+
 			content := s.Text()
 
 			name := strings.Trim(strings.ReplaceAll(content, "\n", ""), " ")
@@ -44,9 +47,10 @@ func (a *kodePosImpl) Province() ([]*Province, error) {
 			uri := s.AttrOr("href", "")
 
 			province := Province{
-				Name: name,
-				Key:  key,
-				Url:  uri,
+				Name:  name,
+				Key:   key,
+				Image: img,
+				Url:   uri,
 			}
 
 			result = append(result, &province)

@@ -96,7 +96,8 @@ func (c *cacheImpl) cleanUp() {
 	t := time.NewTicker(time.Minute)
 
 	for range t.C {
-		slog.Info("Clean Up Cache", slog.Int("count", len(c.items)))
+		slog.Info("Cache", slog.Int("count", len(c.items)))
+		slog.Info("Clean Up Cache")
 
 		for key, item := range c.items {
 			if time.Now().Unix() > item.Expiration {
