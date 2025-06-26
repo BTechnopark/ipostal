@@ -25,7 +25,7 @@ type PostalCodeApi interface {
 	Province() ([]*kodepos.Province, error)
 	Region(provinceKey string) ([]*kodepos.Region, error)
 	PostalCode(provinceKey, regionKey string) ([]*kodepos.KodePosData, error)
-	SearchPostalCode(q string) (model.ListPostalCode, error)
+	SearchPostalCode(q string, page, limit int) (model.ListPostalCode, bool, error)
 }
 
 type ApiMeta interface {

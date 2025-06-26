@@ -2,8 +2,6 @@ package ipostal_api
 
 import (
 	"context"
-	"crypto/md5"
-	"encoding/hex"
 	"errors"
 	"net/http"
 
@@ -26,8 +24,10 @@ type searchPostalCodeImpl struct {
 	cache cache.Cache
 }
 
-type FindPostalCodeQuery struct {
-	Q string `json:"q" form:"q" schema:"q"`
+type SearchPostalCodeQuery struct {
+	Q     string `json:"q" form:"q" schema:"q"`
+	Page  int    `json:"page" form:"page" schema:"page"`
+	Limit int    `json:"limit" form:"limit" schema:"limit"`
 }
 
 // Meta implements ApiMeta.
@@ -35,7 +35,7 @@ func (f *searchPostalCodeImpl) Meta(uri string) *gin_api.ApiData {
 	return &gin_api.ApiData{
 		Method:       http.MethodGet,
 		RelativePath: uri,
-		Query:        &FindPostalCodeQuery{},
+		Query:        &SearchPostalCodeQuery{},
 		Response:     &ResponseData[[]*model.PostalCode]{},
 	}
 }
@@ -44,25 +44,29 @@ func (f *searchPostalCodeImpl) Meta(uri string) *gin_api.ApiData {
 func (f *searchPostalCodeImpl) Handler() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 
-		query := FindPostalCodeQuery{}
-		result := &ResponseData[model.ListPostalCode]{}
-
-		fullpath := ctx.Request.URL.String()
-		hash := md5.Sum([]byte(fullpath))
-		cacheKey := hex.EncodeToString(hash[:])
+		query := SearchPostalCodeQuery{
+			Page:  1,
+			Limit: 20,
+		}
+		result := &ResponseData[model.ListPostalCode]{
+			Data:     model.ListPostalCode{},
+			PageInfo: &PageInfo{},
+		}
 
 		apiCtx := api_context.NewApiContext(ctx)
 		apiCtx.
 			BindQuery(&query).
-			Cache(f.cache, cacheKey, result).
+			Cache(f.cache, "", result).
+			Exec(func(seterr func(err error)) {
+				if query.Limit%10 != 0 {
+					seterr(errors.New("limit must be multiple of 10"))
+					return
+				}
+			}).
 			Exec(func(seterr func(err error)) {
 				var err error
 
-				if query.Q == "" {
-					query.Q = "0"
-				}
-
-				data, err := f.api.SearchPostalCode(query.Q)
+				data, hasMore, err := f.api.SearchPostalCode(query.Q, query.Page, query.Limit)
 				if err != nil {
 					if errors.Is(err, context.DeadlineExceeded) {
 						err = errors.New("third party api timeout")
@@ -72,6 +76,11 @@ func (f *searchPostalCodeImpl) Handler() gin.HandlerFunc {
 				}
 
 				result.Data = data
+				result.PageInfo = &PageInfo{
+					CurrentPage: query.Page,
+					HasMore:     hasMore,
+				}
+
 			}).
 			Finish(result)
 	}

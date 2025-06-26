@@ -1,6 +1,7 @@
 package kodepos
 
 import (
+	"math"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -68,7 +69,7 @@ func (a *kodePosImpl) searchPostalCode(query searchKodePostQuery) (model.ListPos
 	return result, err
 }
 
-func (a *kodePosImpl) SearchPostalCode(q string) (model.ListPostalCode, error) {
+func (a *kodePosImpl) SearchPostalCode(q string, page, limit int) (model.ListPostalCode, bool, error) {
 	var err error
 	result := model.ListPostalCode{}
 
@@ -76,7 +77,7 @@ func (a *kodePosImpl) SearchPostalCode(q string) (model.ListPostalCode, error) {
 	endpoint := "/cari"
 	uri, err := url.JoinPath(baseUrl, endpoint)
 	if err != nil {
-		return result, err
+		return result, false, err
 	}
 
 	query := searchKodePostQuery{
@@ -85,7 +86,7 @@ func (a *kodePosImpl) SearchPostalCode(q string) (model.ListPostalCode, error) {
 
 	req, err := a.api.NewRequest(http.MethodGet, uri, query, nil, nil)
 	if err != nil {
-		return result, err
+		return result, false, err
 	}
 
 	totalPage := 0
@@ -119,24 +120,31 @@ func (a *kodePosImpl) SearchPostalCode(q string) (model.ListPostalCode, error) {
 		return err
 	})
 	if err != nil {
-		return result, err
+		return result, false, err
 	}
 
 	baseLimit := 10
-	limitPage := query.Limit / baseLimit
-	if limitPage < totalPage {
-		totalPage = limitPage
+	groupLimit := limit / baseLimit
+	groupPage := int(math.Ceil(float64(totalPage) / float64(groupLimit)))
+
+	startPage := 1
+	if page > 1 {
+		startPage = (page * groupLimit) - 1
 	}
 
-	for i := 1; i <= totalPage; i++ {
+	endPage := min((startPage+groupLimit)-1, groupPage)
+
+	for i := startPage; i <= endPage; i++ {
 		query.Page = i
 		data, err := a.searchPostalCode(query)
 		if err != nil {
-			return result, err
+			return result, false, err
 		}
 
 		result = append(result, data...)
 	}
 
-	return result, err
+	hasMore := groupPage > page
+
+	return result, hasMore, err
 }

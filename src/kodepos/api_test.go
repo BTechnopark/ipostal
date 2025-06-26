@@ -54,8 +54,13 @@ func TestKodePost(t *testing.T) {
 	})
 
 	t.Run("test search postal code", func(t *testing.T) {
-		postalCode, err := api.SearchPostalCode("154")
+		postalCode, _, err := api.SearchPostalCode("jawa timur", 1, 20)
 		assert.Nil(t, err)
 		assert.NotEmpty(t, postalCode)
+
+		// raw, err := json.MarshalIndent(postalCode, "", "  ")
+		// assert.Nil(t, err)
+		// t.Log(string(raw))
+		// t.Log(len(postalCode))
 	})
 }
